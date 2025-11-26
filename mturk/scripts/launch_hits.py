@@ -8,7 +8,7 @@ from datetime import datetime
 
 INTERVAL = 1800  # publish one HIT every 30 minutes
 
-def create_output_dir(sandbox_true, base_dir='runs'):
+def create_output_dir(sandbox_true, base_dir='../data/results'):
     timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M')
     output_dir = os.path.join(base_dir, f'{sandbox_true}-publish-{timestamp}')
     os.makedirs(output_dir, exist_ok=True)

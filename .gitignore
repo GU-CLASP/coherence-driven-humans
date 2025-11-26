@@ -3,8 +3,8 @@ __pycache__/
 *.py[codz]
 *$py.class
 
-# MTurk data directory
-mturk/data/
+# MTurk results directory (ignore this)
+mturk/data/results/
 
 # MTurk config (contains AWS credentials)
 mturk/scripts/config.json

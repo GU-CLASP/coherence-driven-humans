@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Story Task</title>
+  <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      color: #333;
+    }
+
+    .button {
+      background-color: #e5e5e5;
+      color: #4a4a4a;
+      font-weight: 600;
+      font-size: 18px;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 30px;
+      margin-left: 20px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background-color: white;
+      width: 800px;
+      border-radius: 4px;
+      padding: 24px;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #e5e5e5;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      margin-right: 24px;
+      padding-bottom: 8px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .tab.active {
+      border-bottom: 2px solid black;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 16px;
+      right: 24px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    #main {
+      display: flex;
+      gap: 60px;
+      padding-left: 20px;
+    }
+      
+    #characters {
+      flex: 0 0 150px;
+      margin-left: 20px;
+    }
+
+    #characters img {
+      width: 100%;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #characters p {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    #images-container {
+      flex: 1;
+      max-width: 850px;
+      margin: 0 auto;
+    }
+
+    .image-box {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 30px;
+      gap: 20px;
+    }
+
+    .image-box img {
+      width: 380px;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid #bbb;
+      cursor: zoom-in;
+      transition: transform 0.2s ease;
+    }
+
+    .image-box img.zoomed {
+      transform: scale(2.2);
+      z-index: 999;
+      position: relative;
+    }
+
+    .image-box textarea {
+      width: 50%;
+      height: 120px;
+      resize: vertical;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #aaa;
+      background-color: #fdfdfd;
+    }
+
+    #full-story {
+      margin-top: 30px;
+      padding: 15px;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #story-output {
+      white-space: pre-wrap;
+    }
+
+    .metrics {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+      
+  </style>
+</head>
+<body>
+
+<p style="color: red; font-weight: bold; max-width: 800px; margin-bottom: 10px;">
+  Please click on "View Instructions" and carefully read both the Summary and Detailed Instructions tabs.  
+  You must follow all instructions in order to be eligible for payment.
+</p>
+    
+<button class="button" onclick="openModal()">View Instructions</button>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <span class="close-btn" onclick="closeModal()">&times;</span>
+    <h2>Instructions</h2>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('summary')">Summary</div>
+      <div class="tab" onclick="switchTab('detailed')">Detailed Instructions</div>
+      <!-- <div class="tab" onclick="switchTab('examples')">Examples</div> -->
+    </div>
+    <div id="summary" class="tab-content active">
+      <p>Describe a sequence of images as one story.</p>
+      <ul>
+        <li><b>Story</b>: A set of descriptions about multiple images. The descriptions must depict the content of the images and together form a coherent whole. They must be accurate and descriptive of the visual story, but not unnecessarily long.</li>
+        <li><b>A sequence of images</b>: A number of images extracted from movies and curated in an order that is coherent. Images include characters that appear in the story.</li>
+        <li><b>Characters</b>: The list of images of movie characters and their names.</li>
+      </ul>
+      <p>We value quality in the stories, and we manually inspect each submitted story. The reward we give ($4) is standard per story and will be provided if the story has at least <b>85</b> words. We are looking for a detailed narrative that fully characterizes each image sequence. Therefore, <b>we will pay more if you write more words while still keeping the story coherent and of high quality</b>. We pay <b>4 cents per word</b> beyond the 85-word limit. The story should not be longer than necessary to achieve completeness, or it risks incoherence or repetition. Please make sure that your story is complete, makes sense and doesn't repeat itself. 
+      </p>
+    </div>
+    <div id="detailed" class="tab-content">
+      <p>
+      <b>Think carefully about what makes a good story</b>. In general, a good story strikes the right balance between length, content, coherence, and appropriateness for the images. Every sequence of images is individual and unique, so they will have different stories, different structures, etc.
+      </p>
+      <p>
+<b>Stories must be tellable</b>, and it should be easy to visualise the events without access to the images. Focus on how you would describe images to someone who cannot see the images, and do not add your own opinions or speculations.
+      </p>
+
+        <ul>
+            
+        <li>You need to be a native speaker of English. We apply special filters to the stories you produce to identify those created by non-English speakers. These filters have proven highly effective in our previous work. If you are not a native speaker of English, please exit the task.</li>
+            
+        <li>Write descriptions in the story next to the images. We expect you to produce descriptions for at least <b>5</b> images. You are free to decide which images do not need to be described, but if you do so, please indicate in the feedback form below why you decided to skip certain images.</li>
+
+        <li>The story must be about the image sequence and how these images come together into a tellable and coherent story. If you believe some speech occurs and this is relevant to the story, you are welcome to describe what characters are talking about as part of the story. Do not include direct quotations, dialogue, or monologue (with quotes), and do not write a monologue or dialogue between characters as part of the story. If you describe what characters are talking about, include your reason for doing so in the feedback form below.</li>
+
+        <li>A story must consist of what is happening in the images, involving the characters and events depicted. If you mention a character, please use the names provided (if any). You can refer to characters differently depending on the context, e.g., "she", "they", "the police", "John". If the character you want to mention is not listed, name the character as you wish, but be consistent.</li>
+
+        <li>Use punctuation and capitalisation correctly to the best of your ability. Produce grammatically correct descriptions in the story.</li>
+
+        <li><b>Do not mention that you are describing an image</b>. Avoid phrases like “In this image...”, “Image 1 shows…”, etc. The story must focus exclusively on what is happening in the images.</li>
+
+        <li><b>Do not use any automatic tools to write the story</b>; you must be the sole author of your story. As researchers who develop LLMs, we have filters for identifying artificially generated stories that have proven highly efficient. Note that we also manually review the stories, and AI filters are used as assistants.</li>
+
+      </ul>
+
+      <p>
+      By the end of our data collection process, we will send bonus payments to workers who have followed the instructions above and done even more than required. We also ask you to fill out a short questionnaire once you have described the images. The answers in this questionnaire <b>will not</b> affect our review of your assignment.
+      </p>
+      <p>
+It is important that you keep in mind that the stories you produce will be used to improve AI models, so we ask you to follow the instructions honestly and fairly.
+      </p>
+
+        
+    </div>
+      
+    <!--
+    <div id="examples" class="tab-content">
+      <p>[Examples go here...]</p>
+    </div>
+    -->
+      
+  </div>
+</div>
+
+<crowd-form answer-format="flatten-objects">
+
+  <input type="hidden" name="storyId" id="story-id-input">
+
+  <div id="main">
+    <div id="characters">
+      <p><strong>Characters:</strong></p>
+    </div>
+
+    <div id="images-container">
+      <div class="image-grid" id="image-grid"></div>
+
+      <div class="metrics">
+        <p>Word Count (at least 85): <span id="word-count">0</span></p>
+        <p>Image Count (at least 5): <span id="image-count">0</span></p>
+      </div>
+
+      <div id="full-story"><strong>Current story:</strong>
+        <div id="story-output">&nbsp;</div>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+    
+  <div class="crowd-questions">
+  <p>Did you skip any images? If not, write "No." If yes, please explain why.</p>
+  <crowd-input id="skipQ" required label="Your answers go here..." name="skippedImages"></crowd-input>
+  </div>
+
+  <div class="crowd-questions">
+  <p>Did you describe what the characters are talking about? If not, write "No." If yes, please explain why.</p>
+  <crowd-input id="dialogueQ" required label="Your answers go here..." name="describedDialogue"></crowd-input>
+  </div>
+
+  <div class="crowd-questions">
+  <p>Are these images familiar to you? If not, write "No." If yes, have you seen them in a movie?</p>
+  <crowd-input id="familiarQ" required label="Your answers go here..." name="imageFamiliarity"></crowd-input>
+  </div>
+
+  <div class="crowd-questions">
+  <p>Do you agree with the statement: "You can write a story easily with these images"?</p>
+  <crowd-input id="easyQ" required label="Your answers go here..." name="storyEase"></crowd-input>
+  </div>
+
+</crowd-form>
+
+<script>
+  function openModal() {
+    document.getElementById('modalOverlay').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').style.display = 'none';
+  }
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+    
+  const charData = [{'CharImageSrc': 'https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta2c/tt0758758_0012_2/char_0000.jpg', 'CharNameSrc': 'Emile'}];
+  const imageData = [{'ImageSrc': 'https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta2c/tt0758758_0012_2/shot_1811_img_0.jpg', 'ImgId': 0}, {'ImageSrc': 'https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta2c/tt0758758_0012_2/shot_1814_img_2.jpg', 'ImgId': 1}, {'ImageSrc': 'https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta2c/tt0758758_0012_2/shot_1818_img_0.jpg', 'ImgId': 2}, {'ImageSrc': 'https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta2c/tt0758758_0012_2/shot_1826_img_0.jpg', 'ImgId': 3}, {'ImageSrc': 'https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta2c/tt0758758_0012_2/shot_1828_img_0.jpg', 'ImgId': 4}];
+  const storyId = 13596;
+
+  const characterContainer = document.getElementById('characters');
+  charData.forEach(char => {
+    const img = document.createElement('img');
+    img.src = char.CharImageSrc;
+    characterContainer.appendChild(img);
+
+    const name = document.createElement('p');
+    name.textContent = char.CharNameSrc;
+    characterContainer.appendChild(name);
+  });
+
+  const imagesContainer = document.getElementById('image-grid');
+  imageData.forEach((img, idx) => {
+    const box = document.createElement('div');
+    box.className = 'image-box';
+
+    const image = document.createElement('img');
+    image.src = img.ImageSrc;
+    image.alt = 'Image ' + (idx + 1);
+    box.appendChild(image);
+
+    const textarea = document.createElement('textarea');
+    textarea.name = 'desc' + idx;
+    textarea.placeholder = 'Describe this image...';
+    textarea.addEventListener('input', updateStory);
+    box.appendChild(textarea);
+
+    imagesContainer.appendChild(box);
+  });
+
+  function updateStory() {
+    const textareas = document.querySelectorAll('textarea');
+    const fullText = [];
+    let wordCount = 0;
+    let imageCount = 0;
+
+    textareas.forEach(t => {
+      const val = t.value.trim();
+      if (val.length > 0) {
+        fullText.push(val);
+        wordCount += val.split(/\s+/).length;
+        imageCount++;
+      }
+    });
+
+    document.getElementById('story-output').innerText = fullText.join(' ');
+    document.getElementById('word-count').innerText = wordCount;
+    document.getElementById('image-count').innerText = imageCount;
+  }
+
+  document.addEventListener('DOMContentLoaded', updateStory);
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('story-id-input').value = storyId;
+    });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.image-box img').forEach(img => {
+      img.addEventListener('click', () => {
+        img.classList.toggle('zoomed');
+      });
+    });
+  });
+    
+</script>
+
+</body>
+</html>

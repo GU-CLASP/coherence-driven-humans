@@ -1,0 +1,45 @@
+{
+  "Title": "Help us bridge the gap between AI and humans in telling stories about movies!",
+  "Description": "We are a group of researchers working with large language models, and we ask for your help in collecting stories based on the images provided. The data you submit will be used to build and improve AI models that understand how to generate stories about movies just as you do! We're very excited to have you join our experiment!",
+  "Keywords": "image, story, description, narrative, movie",
+  "LifetimeInSeconds": 259200,
+  "Reward": 4.00,
+  "AssignmentDurationInSeconds": 1800,
+  "AutoApprovalDelayInSeconds": 129600,
+  "FrameHeight": 20000,
+  "MaxAssignments": 3,
+  "QualificationRequirements": [
+    {
+      "QualificationTypeId": "00000000000000000071",
+      "Comparator": "In",
+      "LocaleValues": [
+        {"Country": "US"},
+        {"Country": "GB"},
+        {"Country": "CA"},
+        {"Country": "IE"},
+        {"Country": "AU"},
+        {"Country": "NZ"}
+      ]
+    },
+    {
+      "QualificationTypeId": "000000000000000000L0",
+      "Comparator": "GreaterThanOrEqualTo",
+      "IntegerValues": [95]
+    },
+    {
+      "QualificationTypeId": "00000000000000000040",
+      "Comparator": "GreaterThanOrEqualTo",
+      "IntegerValues": [500]
+    },
+    {
+      "QualificationTypeId": "2F1QJWKUDD8XADTFD2Q0G6UTO95ALH",
+      "Comparator": "Exists"
+    },
+    {
+      "QualificationTypeId": "3VIW7BLKQFCIG5E6CXLL1HDYHN07PT",
+      "Comparator": "NotIn",
+      "IntegerValues": [1]
+    }
+  ]
+}
+

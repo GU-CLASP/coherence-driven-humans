@@ -29,6 +29,6 @@ source /mimer/NOBACKUP/groups/naiss2024-6-297/vllm-environments/qwen3vl/bin/acti
 python run.py \
   --csv_file ../../notebooks/collected_60.csv \
   --output_dir ./out-qwen3vl-60stories \
-  --template_name original|medium|large \
+  --template_name original|large \
   --server_url HOST:PORT
 ```

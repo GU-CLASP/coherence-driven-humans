@@ -13,6 +13,9 @@ mturk/scripts/config.json
 # Model API keys
 models/*/config.json
 
+# Collected data
+notebooks/collected_60.csv
+
 # C extensions
 *.so
 

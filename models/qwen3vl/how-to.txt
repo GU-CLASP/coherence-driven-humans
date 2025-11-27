@@ -1,0 +1,21 @@
+# start vllm server
+
+sbatch vllm-start.slurm
+
+# run the script on the same node
+
+scontrol show job 5287051 | grep -E 'BatchHost|NodeList'
+srun --jobid=5296990 -N1 -n1 -w alvis4-39 --cpus-per-task=1 --overlap --pty bash -l
+
+# actually run the script
+
+module purge
+module load virtualenv/20.32.0-GCCcore-14.3.0
+source ./qwen3vl/bin/activate
+python run.py \
+  --csv_file ./amt_60_collected.csv \
+  --output_dir ./original-out \
+  --template_name original|medium|large \
+  --server_url 10.21.30.119:47246
+
+python run.py --csv_file ./amt_60_collected.csv --output_dir ./original-out --template_name original --server_url 10.21.30.56:

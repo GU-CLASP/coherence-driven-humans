@@ -21,3 +21,7 @@ python download_data.py --csv-file ./vwp-acl2025-subset.csv --output-dir ./sampl
 
 ### Data collection on MTurk
 
+See `mturk/README.md` for setup instructions and workflow.
+
+### Running models and generating stories
+

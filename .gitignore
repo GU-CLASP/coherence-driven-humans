@@ -10,6 +10,9 @@ mturk/data/results/
 # MTurk config (contains AWS credentials)
 mturk/scripts/config.json
 
+# Model API keys
+models/*/config.json
+
 # C extensions
 *.so
 

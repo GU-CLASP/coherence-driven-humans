@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Story Task - Full Instructions</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      max-width: 1400px;
+      background-color: white;
+    }
+
+    .instructions-section {
+      background-color: #f9f9f9;
+      border: 2px solid #ccc;
+      border-radius: 0;
+      padding: 24px;
+      margin-bottom: 40px;
+    }
+
+    .instructions-section h2 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+
+    .instructions-section h3 {
+      color: #555;
+      margin-top: 20px;
+    }
+
+    .instructions-section ul {
+      line-height: 1.8;
+    }
+
+    .instructions-section ul li {
+      margin-bottom: 10px;
+    }
+
+    #main {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 40px;
+      padding-left: 20px;
+    }
+      
+    #characters {
+      grid-column: 1;
+    }
+
+    #characters img {
+      width: 100%;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 0;
+    }
+
+    #characters p {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    #images-container {
+      grid-column: 2;
+      max-width: 1200px;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .image-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .image-box img {
+      width: 100%;
+      height: auto;
+      border-radius: 0;
+      border: 1px solid #bbb;
+      margin-bottom: 8px;
+    }
+
+    .image-box .image-number {
+      font-weight: bold;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+
+    .image-box textarea {
+      width: 100%;
+      height: 80px;
+      resize: vertical;
+      padding: 8px;
+      font-size: 12px;
+      border-radius: 0;
+      border: 1px solid #aaa;
+      background-color: #fdfdfd;
+    }
+
+    #full-story {
+      margin-top: 30px;
+      padding: 15px;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 0;
+    }
+
+    #story-output {
+      white-space: pre-wrap;
+    }
+
+    .metrics {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .questionnaire {
+      margin-top: 30px;
+      margin-left: 20px;
+      margin-right: 20px;
+      padding: 20px;
+      background-color: #f5f5f5;
+      border-radius: 0;
+    }
+
+    .questionnaire input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 0;
+      font-size: 14px;
+    }
+      
+  </style>
+</head>
+<body>
+
+<div class="instructions-section">
+      <!--
+  <h2>Instructions</h2>
+  
+  <h3>Summary</h3>
+  <p>Describe a sequence of images as one story.</p>
+  <ul>
+    <li><b>Story</b>: A set of descriptions about multiple images. The descriptions must depict the content of the images and together form a coherent whole. They must be accurate and descriptive of the visual story, but not unnecessarily long.</li>
+    <li><b>A sequence of images</b>: A number of images extracted from movies and curated in an order that is coherent. Images include characters that appear in the story.</li>
+    <li><b>Characters</b>: The list of images of movie characters and their names.</li>
+  </ul>
+  <p>We value quality in the stories, and we manually inspect each submitted story. The reward we give ($4) is standard per story and will be provided if the story has at least <b>85</b> words. We are looking for a detailed narrative that fully characterizes each image sequence. Therefore, <b>we will pay more if you write more words while still keeping the story coherent and of high quality</b>. We pay <b>4 cents per word</b> beyond the 85-word limit. The story should not be longer than necessary to achieve completeness, or it risks incoherence or repetition. Please make sure that your story is complete, makes sense and doesn't repeat itself.</p>
+-->
+
+  <h3>Detailed Instructions</h3>
+  <p><b>Think carefully about what makes a good story</b>. In general, a good story strikes the right balance between length, content, coherence, and appropriateness for the images. Every sequence of images is individual and unique, so they will have different stories, different structures, etc.</p>
+  
+  <p><b>Stories must be tellable</b>, and it should be easy to visualise the events without access to the images. Focus on how you would describe images to someone who cannot see the images, and do not add your own opinions or speculations.</p>
+
+  <ul>
+    <li>You need to be a native speaker of English. We apply special filters to the stories you produce to identify those created by non-English speakers. These filters have proven highly effective in our previous work. If you are not a native speaker of English, please exit the task.</li>
+    
+    <li>Write descriptions in the story next to the images. We expect you to produce descriptions for at least <b>5</b> images. You are free to decide which images do not need to be described, but if you do so, please indicate in the feedback form below why you decided to skip certain images.</li>
+
+    <li>The story must be about the image sequence and how these images come together into a tellable and coherent story. If you believe some speech occurs and this is relevant to the story, you are welcome to describe what characters are talking about as part of the story. Do not include direct quotations, dialogue, or monologue (with quotes), and do not write a monologue or dialogue between characters as part of the story. If you describe what characters are talking about, include your reason for doing so in the feedback form below.</li>
+
+    <li>A story must consist of what is happening in the images, involving the characters and events depicted. If you mention a character, please use the names provided (if any). You can refer to characters differently depending on the context, e.g., "she", "they", "the police", "John". If the character you want to mention is not listed, name the character as you wish, but be consistent.</li>
+
+    <li>Use punctuation and capitalisation correctly to the best of your ability. Produce grammatically correct descriptions in the story.</li>
+
+    <li><b>Do not mention that you are describing an image</b>. Avoid phrases like "In this image...", "Image 1 shows…", etc. The story must focus exclusively on what is happening in the images.</li>
+
+    <li><b>Do not use any automatic tools to write the story</b>; you must be the sole author of your story. As researchers who develop LLMs, we have filters for identifying artificially generated stories that have proven highly efficient. Note that we also manually review the stories, and AI filters are used as assistants.</li>
+  </ul>
+
+  <p>By the end of our data collection process, we will send bonus payments to workers who have followed the instructions above and done even more than required. We also ask you to fill out a short questionnaire once you have described the images. The answers in this questionnaire <b>will not</b> affect our review of your assignment.</p>
+  
+  <p>It is important that you keep in mind that the stories you produce will be used to improve AI models, so we ask you to follow the instructions honestly and fairly.</p>
+</div>
+
+<hr style="margin: 40px 0;">
+
+<div id="main">
+  <div id="characters">
+    <p><strong>Characters:</strong></p>
+    <img src="https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta1/tt0109686_0003_3/char_0000.jpg" alt="Jeff">
+    <p>Jeff</p>
+    <img src="https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta1/tt0109686_0003_3/char_0001.jpg" alt="Jim">
+    <p>Jim</p>
+  </div>
+
+  <div id="images-container">
+    <div class="image-grid" id="image-grid">
+      <div class="image-box">
+        <img src="https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta1/tt0109686_0003_3/shot_0676_img_0.jpg" alt="Image 1">
+        <div class="image-number">1.</div>
+        <textarea name="desc0" placeholder="Describe this image..."></textarea>
+      </div>
+      <div class="image-box">
+        <img src="https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta1/tt0109686_0003_3/shot_0677_img_1.jpg" alt="Image 2">
+        <div class="image-number">2.</div>
+        <textarea name="desc1" placeholder="Describe this image..."></textarea>
+      </div>
+      <div class="image-box">
+        <img src="https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta1/tt0109686_0003_3/shot_0678_img_0.jpg" alt="Image 3">
+        <div class="image-number">3.</div>
+        <textarea name="desc2" placeholder="Describe this image..."></textarea>
+      </div>
+      <div class="image-box">
+        <img src="https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta1/tt0109686_0003_3/shot_0683_img_2.jpg" alt="Image 4">
+        <div class="image-number">4.</div>
+        <textarea name="desc3" placeholder="Describe this image..."></textarea>
+      </div>
+      <div class="image-box">
+        <img src="https://datasets.d2.mpi-inf.mpg.de/xhong/VST/beta1/tt0109686_0003_3/shot_0684_img_0.jpg" alt="Image 5">
+        <div class="image-number">5.</div>
+        <textarea name="desc4" placeholder="Describe this image..."></textarea>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <p>Word Count (at least 85): <span id="word-count">0</span></p>
+      <p>Image Count (at least 5): <span id="image-count">0</span></p>
+    </div>
+
+    <div id="full-story">
+      <strong>Current story:</strong>
+      <div id="story-output">&nbsp;</div>
+    </div>
+  </div>
+</div>
+
+<div class="questionnaire">
+  <p><strong>1. Did you skip any images? If not, write "No." If yes, please explain why.</strong></p>
+  <input type="text" id="skipQ" name="skippedImages" placeholder="Your answer...">
+  
+  <p><strong>2. Did you describe what the characters are talking about? If not, write "No." If yes, please explain why.</strong></p>
+  <input type="text" id="dialogueQ" name="describedDialogue" placeholder="Your answer...">
+  
+  <p><strong>3. Are these images familiar to you? If not, write "No." If yes, have you seen them in a movie?</strong></p>
+  <input type="text" id="familiarQ" name="imageFamiliarity" placeholder="Your answer...">
+  
+  <p><strong>4. Do you agree with the statement: "You can write a story easily with these images"?</strong></p>
+  <input type="text" id="easyQ" name="storyEase" placeholder="Your answer...">
+</div>
+
+<script>
+  function updateStory() {
+    const textareas = document.querySelectorAll('textarea');
+    const fullText = [];
+    let wordCount = 0;
+    let imageCount = 0;
+
+    textareas.forEach(t => {
+      const val = t.value.trim();
+      if (val.length > 0) {
+        fullText.push(val);
+        wordCount += val.split(/\s+/).length;
+        imageCount++;
+      }
+    });
+
+    document.getElementById('story-output').innerText = fullText.join(' ');
+    document.getElementById('word-count').innerText = wordCount;
+    document.getElementById('image-count').innerText = imageCount;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('textarea').forEach(textarea => {
+      textarea.addEventListener('input', updateStory);
+    });
+    updateStory();
+  });
+</script>
+
+</body>
+</html>

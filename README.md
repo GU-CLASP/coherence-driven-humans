@@ -25,3 +25,12 @@ See `mturk/README.md` for setup instructions and workflow.
 
 ### Running models and generating stories
 
+We generated stories for the collected human descriptions using 5 models:
+- **InternVL3-78B** - See `models/internvl3/README.md`
+- **Qwen3-VL-235B** - See `models/qwen3vl/README.md`
+- **Claude-4.5-Sonnet** - See `models/claude/claude45.ipynb`
+- **GPT-4o** - See `models/gpt/gpt4o.ipynb`
+- **Llama-4-Scout** - See `models/llama4scout/README.md`
+
+Each model folder contains the necessary scripts and instructions for generating stories.
+

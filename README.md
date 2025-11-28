@@ -36,3 +36,38 @@ Each model folder contains the necessary scripts and instructions for generating
 
 ### Post-processing
 
+After generating stories with all models, process the outputs for analysis:
+
+1. **Collect model outputs**: Gather all model-generated and human-written stories into a single JSON file.
+
+```bash
+cd scripts
+python collect_data.py \
+    --qwen3vl-out ../models/qwen3vl/out-qwen3vl-60stories/ \
+    --internvl3-out ../models/internvl3/out-internvl3-60stories/ \
+    --llama4-out ../models/llama4scout/out-llama4scout-60stories/ \
+    --gpt4o-out ../models/gpt/out-gpt4o-60stories/ \
+    --claude45-out ../models/claude/out-claude45-60stories/ \
+    --human-large-csv ../notebooks/collected_60.csv \
+    --human-original-csv ../data/vwp-acl2025-subset.csv \
+    --output-json ../data/post-processing/collected_outputs.json
+```
+
+2. **Clean model outputs**: Apply model-specific cleaning functions to remove artifacts and normalize formatting.
+
+```bash
+python clean_data.py \
+    --input-json ../data/post-processing/collected_outputs.json \
+    --output-json ../data/post-processing/cleaned_outputs.json
+```
+
+3. **Prepare LinkAppend inputs**: Convert cleaned stories into LinkAppend-compatible format for coreference resolution.
+
+```bash
+python prepare_linkappend_inputs.py \
+    --input-json ../data/post-processing/cleaned_outputs.json \
+    --output-dir ../models/linkappend/data-in
+```
+
+This creates separate JSON files for each model/prompt/seed combination, ready for coreference analysis.
+

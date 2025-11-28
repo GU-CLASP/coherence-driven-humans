@@ -1,0 +1,3 @@
+[submodule "coref-reeval"]
+	path = coref-reeval
+	url = https://github.com/ianporada/coref-reeval.git

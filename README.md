@@ -71,3 +71,12 @@ python prepare_linkappend_inputs.py \
 
 This creates separate JSON files for each model/prompt/seed combination.
 
+4. **Run LinkAppend coreference resolution**: Process all stories through LinkAppend to identify coreference chains.
+
+```bash
+cd ../models/linkappend
+sbatch linkappend-run.slurm
+```
+
+This submits a SLURM job that processes all JSON files in `data-in/` and outputs coreference-annotated results to `data-out/`.
+

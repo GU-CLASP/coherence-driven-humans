@@ -53,7 +53,7 @@ python collect_data.py \
     --output-json ../data/post-processing/collected_outputs.json
 ```
 
-2. **Clean model outputs**: Apply model-specific cleaning functions to remove artifacts and normalize formatting.
+2. **Clean model outputs**: Apply model-specific cleaning functions to remove artifacts and normalise formatting.
 
 ```bash
 python clean_data.py \
@@ -69,5 +69,5 @@ python prepare_linkappend_inputs.py \
     --output-dir ../models/linkappend/data-in
 ```
 
-This creates separate JSON files for each model/prompt/seed combination, ready for coreference analysis.
+This creates separate JSON files for each model/prompt/seed combination.
 

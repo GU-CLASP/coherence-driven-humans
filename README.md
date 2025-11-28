@@ -34,3 +34,5 @@ We generated stories for the collected human descriptions using 5 models:
 
 Each model folder contains the necessary scripts and instructions for generating stories.
 
+### Post-processing
+

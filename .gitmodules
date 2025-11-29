@@ -1,3 +1,6 @@
 [submodule "coref-reeval"]
 	path = coref-reeval
 	url = https://github.com/nilinykh/coref-reeval.git
+[submodule "corefconversion"]
+	path = corefconversion
+	url = git@github.com:nilinykh/corefconversion.git

@@ -80,3 +80,12 @@ sbatch linkappend-run.slurm
 
 This submits a SLURM job that processes all JSON files in `data-in/` and outputs coreference-annotated results to `data-out/`.
 
+5. **Convert CoNLL to JSON format**: Convert LinkAppend's CoNLL output to jsonlines format for analysis.
+
+```bash
+cd ../../scripts
+sbatch conll2json-corefconversion.sh
+```
+
+This processes all `.conll` files from `data-out/` subdirectories and creates jsonlines files in `data-out/conll_to_json/`.
+

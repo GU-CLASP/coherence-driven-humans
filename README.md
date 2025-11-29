@@ -11,6 +11,11 @@ module load Python/3.13.1-GCCcore-14.2.0
 source /mimer/NOBACKUP/groups/naiss2025-22-1187/coherence-tacl/envs/coherence_tacl/bin/activate
 ```
 
+## Visualisation
+
+To explore individual stories with coreference annotations, use the interactive notebook or pre-generated HTML files. Run `notebooks/visualize_stories_with_coref.ipynb` or download HTML files under `examine_stories/`.
+
+
 ### Prepare data
 
 Download full images and images of characters for 60 visual sequences by running the following script:

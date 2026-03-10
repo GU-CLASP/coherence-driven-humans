@@ -1,0 +1,6 @@
+model,t_stat,p_value,n
+claude45,5.54,0.000,60
+gpt4o,5.66,0.000,60
+internvl3,5.76,0.000,60
+llama4scout,5.76,0.000,60
+qwen3vl,1.65,0.105,60

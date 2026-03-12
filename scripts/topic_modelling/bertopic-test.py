@@ -48,7 +48,6 @@ def get_embeddings(sentences: List[str],
                    embedding_model: SentenceTransformer,
                    cache_file: str,
                    batch_size: int = 64) -> np.ndarray:
-    """Get or compute embeddings with caching."""
     if os.path.exists(cache_file):
         print(f"Loading cached embeddings from {cache_file}...")
         return np.load(cache_file)
@@ -66,6 +65,7 @@ def get_embeddings(sentences: List[str],
     embeddings_list = []
     chunk_size = 1000
     
+    # it is more efficient to process embeddings in chunks
     for i in range(0, len(sentences), chunk_size):
         chunk = sentences[i:i + chunk_size]
         chunk_embeddings = embedding_model.encode(
@@ -127,23 +127,21 @@ def main():
     else:
         output_dir = args.output_dir
     
-    # Skip if already done
     if os.path.exists(os.path.join(output_dir, 'full_results.csv')):
         print(f"SKIPPING: Results already exist in {output_dir}")
         return
     
     os.makedirs(output_dir, exist_ok=True)
     
-    print(f"\n{'='*80}")
     print(f"Testing BERTopic Model")
     print(f"  Bootstrap: {bootstrap_idx}")
     print(f"  Nr Topics: {nr_topics}")
     print(f"  Model Path: {model_path}")
     print(f"  Output Dir: {output_dir}")
-    print(f"{'='*80}")
+    print()
     
     # Load full dataset
-    print("\nStep 1: Loading Full Dataset")
+    print("Step 1: Loading Full Dataset")
     stories, metadata = load_full_dataset()
     print(f"Loaded {len(stories)} stories")
     print(f"Metadata columns: {list(metadata.columns)}")
@@ -152,8 +150,7 @@ def main():
     all_sentences, doc_sentence_mapping, sentence_to_doc = process_sentences(stories)
     print(f"Total sentences: {len(all_sentences)}")
     
-    # Load embeddings for full dataset
-    print("\nStep 2: Loading/Computing Embeddings for Full Dataset")
+    print("Step 2: Loading/Computing Embeddings for Full Dataset")
     embedding_model = SentenceTransformer("Salesforce/SFR-Embedding-Mistral", device='cuda')
     
     # Store embeddings in the cache folder
@@ -164,23 +161,23 @@ def main():
     print(f"Embeddings shape: {embeddings.shape}")
     
     # Load trained model
-    print("\nStep 3: Loading Trained BERTopic Model")
+    print("Step 3: Loading Trained BERTopic Model")
     topic_model = BERTopic.load(model_path)
     print(f"Model loaded with {len(topic_model.get_topics())} topics")
     
     # Transform (predict topics for full dataset)
-    print("\nStep 4: Predicting Topics for Full Dataset")
+    print("Step 4: Predicting Topics for Full Dataset")
     topics, probs = topic_model.transform(all_sentences, embeddings=embeddings)
     
     # Aggregate sentence-level topics to document level
-    print("\nStep 5: Aggregating Results to Document Level")
+    print("Step 5: Aggregating Results to Document Level")
     doc_results = []
     
     for doc_id, sent_indices in tqdm(doc_sentence_mapping.items(), desc="Aggregating"):
         doc_topics = [topics[i] for i in sent_indices]
         doc_probs = [probs[i] for i in sent_indices]
         
-        # Get most common topic (mode)
+        # just getting the most common topic, to look at
         from collections import Counter
         topic_counts = Counter(doc_topics)
         main_topic = topic_counts.most_common(1)[0][0]
@@ -204,7 +201,7 @@ def main():
     results_df = results_df.merge(metadata, left_on='doc_id', right_on='story_index', how='left')
     
     # Save results
-    print("\nStep 6: Saving Results")
+    print("Step 6: Saving Results")
     
     # Save full results
     results_df.to_csv(os.path.join(output_dir, 'full_results.csv'), index=False)
@@ -225,9 +222,8 @@ def main():
         json.dump(mapping_info, f, indent=2)
     
     # Print summary
-    print(f"\n{'='*80}")
     print("RESULTS SUMMARY")
-    print(f"{'='*80}")
+    print()
     print(f"Total documents: {len(results_df)}")
     print(f"Unique topics assigned: {results_df['main_topic'].nunique()}")
     print(f"\nDocuments per model_type:")
@@ -235,7 +231,7 @@ def main():
     print(f"\nDocuments per (model_type, prompt_type):")
     print(results_df.groupby(['model_type', 'prompt_type']).size())
     
-    print(f"\n✓ Results saved to {output_dir}")
+    print(f"Results saved to {output_dir}")
 
 if __name__ == "__main__":
     main()

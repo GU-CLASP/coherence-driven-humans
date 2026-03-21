@@ -17,8 +17,8 @@ import numpy.lib.format as nplf
 locale.getpreferredencoding = lambda: "UTF-8"
 
 # Paths to data
-DATA_DIR = '../data/bertopic_inputs'
-BALANCED_TRAIN_DIR = os.path.join(DATA_DIR, 'balanced_train_sets')
+DATA_DIR = '/mimer/NOBACKUP/groups/naiss2024-6-297/cache/bertopic_data'
+BALANCED_TRAIN_DIR = os.path.join(DATA_DIR, 'bertopic_inputs', 'balanced_train_sets')
 DEFAULT_CACHE_DIR = '/mimer/NOBACKUP/groups/naiss2024-6-297/cache/bertopic_bootstrapped'
 
 def load_balanced_training_set(bootstrap_idx: int) -> List[str]:

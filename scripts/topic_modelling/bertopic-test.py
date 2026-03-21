@@ -10,13 +10,27 @@ from bertopic import BERTopic
 from sentence_transformers import SentenceTransformer
 
 # Paths
-DATA_DIR = '/mimer/NOBACKUP/groups/naiss2025-22-1187/data/bertopic_inputs'
+DATA_DIR = '/mimer/NOBACKUP/groups/naiss2024-6-297/cache/bertopic_data'
 DEFAULT_CACHE_DIR = '/mimer/NOBACKUP/groups/naiss2024-6-297/cache/bertopic_bootstrapped'
 
 def load_full_dataset() -> Tuple[List[str], pd.DataFrame]:
     """Load the full dataset (all texts including all human-large seeds)."""
-    stories_path = os.path.join(DATA_DIR, 'all_stories_texts.json')
-    metadata_path = os.path.join(DATA_DIR, 'all_stories_metadata.csv')
+    stories_candidates = [
+        os.path.join(DATA_DIR, 'bertopic_stories_texts.json'),
+        os.path.join(DATA_DIR, 'bertopic_inputs', 'all_stories_texts.json'),
+    ]
+    metadata_candidates = [
+        os.path.join(DATA_DIR, 'bertopic_metadata.csv'),
+        os.path.join(DATA_DIR, 'bertopic_inputs', 'all_stories_metadata.csv'),
+    ]
+
+    stories_path = next((p for p in stories_candidates if os.path.exists(p)), None)
+    metadata_path = next((p for p in metadata_candidates if os.path.exists(p)), None)
+
+    if stories_path is None:
+        raise FileNotFoundError(f"Could not find stories file in any of: {stories_candidates}")
+    if metadata_path is None:
+        raise FileNotFoundError(f"Could not find metadata file in any of: {metadata_candidates}")
     
     with open(stories_path, 'r') as f:
         stories = json.load(f)

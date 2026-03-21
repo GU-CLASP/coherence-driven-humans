@@ -34,10 +34,12 @@ Expected files:
 
 ## What The Pipeline Does
 
-1. Build BERTopic inputs from the story dataset.
+1. Build BERTopic inputs from the story dataset — run `notebooks/create_inputs_for_berttopic.ipynb`.
 2. Train BERTopic on 10 balanced bootstrap sets.
 3. Run inference for each bootstrap and topic-reduction setting.
 4. Compute topic-switch metrics from sentence-level assignments.
+
+See `scripts/topic_modelling/technical_details.md` for background on the balanced bootstrap design, embedding model, and BERTopic configuration choices.
 
 Defaults in current runs:
 
@@ -69,15 +71,19 @@ Analysis output:
 
 ## Run Commands
 
-From the repo root:
+Step 1 — build inputs: run `notebooks/create_inputs_for_berttopic.ipynb`.
+
+Steps 2–3 — training and inference, run from `scripts/topic_modelling/`:
 
 ```bash
-# Optional pilot discovery
-PILOT_DISCOVERY=1 MIN_TOPIC_SIZE=10 sbatch scripts/topic_modelling/bertopic-train.sh
+cd scripts/topic_modelling
+
+# Optional pilot discovery (helps pick min_topic_size)
+PILOT_DISCOVERY=1 MIN_TOPIC_SIZE=10 sbatch bertopic-train.sh
 
 # Full training
-MIN_TOPIC_SIZE=10 sbatch scripts/topic_modelling/bertopic-train.sh
+MIN_TOPIC_SIZE=10 sbatch bertopic-train.sh
 
 # Inference
-MIN_TOPIC_SIZE=10 sbatch scripts/topic_modelling/bertopic-test.sh
+MIN_TOPIC_SIZE=10 sbatch bertopic-test.sh
 ```

@@ -1,0 +1,18 @@
+# Wikimedia movement blog (often image + story)
+https://diff.wikimedia.org/feed/
+
+# Wikimedia Foundation news posts (often image + story)
+https://wikimediafoundation.org/news/feed/
+
+# Smithsonian Magazine RSS (these are real RSS endpoints; categories often contain big images)
+https://www.smithsonianmag.com/rss/latest_articles/
+https://www.smithsonianmag.com/rss/photos/
+https://www.smithsonianmag.com/rss/travel/
+https://www.smithsonianmag.com/rss/science/
+
+# NASA “Astronomy Picture of the Day” (always image + explanation text)
+http://apod.nasa.gov/apod.rss
+
+# NASA Earth Observatory feeds (image-centric stories; pages list these feeds)
+https://science.nasa.gov/feed/earth-observatory/image-of-the-day
+https://science.nasa.gov/feed/earth-observatory/natural-events

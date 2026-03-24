@@ -1,6 +1,41 @@
 # MTurk Data Collection
 
-Scripts and tools for running Amazon Mechanical Turk (AMT) data collection tasks
+Scripts and tools for running Amazon Mechanical Turk (AMT) data collection tasks.
+
+## Data Collection Overview
+
+We collected human-generated descriptions for 60 visual story sequences through Amazon Mechanical Turk (AMT). Each sequence was described by three different crowd workers, resulting in 180 descriptions in total. Each worker could describe a given story only once.
+
+### Recruitment
+
+Participation was restricted to workers meeting the following criteria:
+
+1. Master qualification status on Amazon Mechanical Turk
+2. Residence in an English-speaking country (US, UK, Canada, Ireland, Australia, New Zealand)
+3. Approval rate ≥ 95%
+4. At least 500 previously approved AMT tasks
+
+Data collection involved 55 unique workers, who completed an average of 3.27 stories each (SD = 1.86, range = 1–8).
+
+### Compensation
+
+- **Base reward:** $4.00 per story
+- **Bonus:** $0.04 per word beyond the required minimum of 85 words
+- **Time limit:** 30 minutes per task
+
+On average, descriptions contained 162.46 words (SD = 80.46, range = 85–487), corresponding to an average payment of $10.50 per submission. Total compensation to workers was $1,889.68, with an additional $413.94 in platform fees (20% on base reward and bonuses, plus 5% Masters qualification surcharge), for a total data-collection cost of **$2,303.62**.
+
+### Worker and description distributions
+
+
+[Worker distribution](../figures/worker_distribution.pdf)
+
+[Word count distribution](../figures/word_count_distribution.pdf)
+
+[Task interface](./figures/mturk_instructions.png)
+
+[Detailed instructions](./figures/mturk_detailed_instructions.png)
+
 
 ## Setup
 

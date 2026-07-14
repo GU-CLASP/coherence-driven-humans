@@ -1,0 +1,8 @@
+Bootstrap: docker
+From: vllm/vllm-openai:v0.25.0-aarch64-cu129-ubuntu2404
+
+%environment
+    export PYTHONUNBUFFERED=1
+
+%runscript
+    exec vllm "$@"

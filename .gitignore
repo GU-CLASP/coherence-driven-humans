@@ -218,3 +218,26 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Repo-specific local/generated artifacts
+README-alvis.md
+README-arrhenius.md
+REPRODUCIBILITY.md
+environment.txt
+envs/
+models/container-how-to.txt
+models/pre-download.txt
+models/qwen3vl/logs/
+models/qwen3vl/out-qwen3vl-60stories-large-upper-bound/
+models/qwen3vl/out-qwen3vl-60stories/prompt-original-target-outputs/
+models/qwen3vl/vllm.err
+models/qwen3vl/vllm.out
+models/vllm-v0.25.0-aarch64.sif
+data/prompts/prompt-large-target-w-names.txt
+data/prompts/prompt-large-target-wo-names.txt
+data/prompts/prompt-large-upper-bound-w-names.txt
+data/prompts/prompt-large-upper-bound-wo-names.txt
+data/prompts/prompt-original-target-w-names.txt
+data/prompts/prompt-original-target-wo-names.txt
+notebooks/examine_generated_stories.ipynb
+scripts/collect_and_clean_data.py

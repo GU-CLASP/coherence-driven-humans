@@ -1,0 +1,17 @@
+# 1. start a detachable session
+screen -S download
+
+# 2. clean env + a dedicated download venv (kept separate from models-arm64)
+module purge
+python3 -m venv /nobackup/proj/disk/naiss2024-6-297/personal/ilinykh/hf-dl-venv
+source /nobackup/proj/disk/naiss2024-6-297/personal/ilinykh/hf-dl-venv/bin/activate
+pip install -U "huggingface_hub[cli]"
+
+# 3. point at the shared cache the job uses + auth
+export HF_HOME=/nobackup/proj/disk/naiss2024-6-297/shared/hf-home
+export HUGGING_FACE_HUB_TOKEN=$(tr -d '\r\n' < /nobackup/proj/disk/naiss2024-6-297/personal/ilinykh/config.json)
+
+# 4. download (weights land in $HF_HOME/hub)
+hf download Qwen/Qwen3-VL-235B-A22B-Thinking
+
+screen -r download

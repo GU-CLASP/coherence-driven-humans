@@ -1,0 +1,5 @@
+interactive --nodes=1 -t 01:00:00 -A naiss2025-5-551-gpu -p gpu
+module purge
+module load GPU/buildenv-nvhpc/25.9-cu13.0
+cd /nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans/models
+APPTAINER_TMPDIR=$SLURM_TMPDIR apptainer build vllm-v0.25.0-aarch64.sif vllm-0.25.def

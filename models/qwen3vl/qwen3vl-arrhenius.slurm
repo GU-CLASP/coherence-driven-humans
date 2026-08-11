@@ -13,8 +13,14 @@
 
 module purge
 
-# Always resolve paths relative to this launcher file, regardless of sbatch CWD.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -n "${SLURM_JOB_SCRIPT:-}" ]]; then
+  SCRIPT_DIR="$(cd "$(dirname "${SLURM_JOB_SCRIPT}")" && pwd)"
+elif [[ -n "${SLURM_SUBMIT_DIR:-}" ]]; then
+  SCRIPT_DIR="${SLURM_SUBMIT_DIR}/models/qwen3vl"
+else
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
+cd "${SCRIPT_DIR}"
 RUNPY_PATH="${SCRIPT_DIR}/run.py"
 
 # paths
@@ -24,10 +30,32 @@ export HF_HOME="/nobackup/proj/disk/naiss2024-6-297/shared/hf-home"
 export HOST_VENV="/nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans/envs/models-arm64"
 export SIF_IMAGE="/nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans/models/vllm-v0.25.0-aarch64.sif"
 
-# change this parameters depending on the prompt, the output folder and how many requests you want to send in parallel (16 is the max (kind of) for 4xA100-80GB)
+# Change these parameters depending on the prompt and output folder.
+# Concurrency ceiling, verified from job 456664's own startup log (not a guess):
+#   GPU KV cache size: 1,230,784 tokens
+#   vLLM's own conservative bound: "Maximum concurrency for 48,000 tokens per
+#   request: 25.64x" (i.e. capacity / max-model-len, assuming EVERY request
+#   uses the full 48k context — the safest possible ceiling).
+# Real observed usage is much smaller than that worst case: story prompts were
+# only ~1,750-2,400 tokens (measured from num_computed_tokens - num_output_tokens
+# in the dump_input.py crash dumps of jobs 427686/427692), so with the 4096
+# max_tokens cap, a real story worst-case is ~6,500 tokens, not 48,000 — capacity
+# alone would allow ~180 concurrent. Going that far above vLLM's own 25.64x
+# guarantee is risky though: it relies on every remaining story never needing
+# close to a full 48k context; if one ever does, vLLM preempts other running
+# sequences to make room, which adds another source of instability on top of
+# the still-unresolved JIT-recompile/NCCL desync issue below. Recommended: stay
+# at or under 24 (just under the 25.64x verified-safe bound) — this is a
+# capacity ceiling only, NOT a fix for that separate instability, which struck
+# at concurrency=8 and is independent of batch size.
 export CLIENT_TEMPLATE_NAME="${CLIENT_TEMPLATE_NAME:-large-upper-bound}"
 export CLIENT_OUTPUT_DIR="${CLIENT_OUTPUT_DIR:-./out-qwen3vl-60stories}"
-export CLIENT_CONCURRENCY="${CLIENT_CONCURRENCY:-16}"
+export CLIENT_CONCURRENCY="${CLIENT_CONCURRENCY:-24}"
+export CLIENT_MAX_TOKENS="${CLIENT_MAX_TOKENS:-8192}"
+export CLIENT_THINKING_TOKEN_BUDGET="${CLIENT_THINKING_TOKEN_BUDGET:--1}"
+export VLLM_MAX_NUM_SEQS="${VLLM_MAX_NUM_SEQS:-${CLIENT_CONCURRENCY}}"
+export VLLM_MAX_NUM_BATCHED_TOKENS="${VLLM_MAX_NUM_BATCHED_TOKENS:-8192}"
+export VLLM_ENABLE_EXPERT_PARALLEL="${VLLM_ENABLE_EXPERT_PARALLEL:-1}"
 
 # discriminative naming for the log files
 if [[ -n "${SLURM_JOB_ID:-}" ]]; then
@@ -36,6 +64,21 @@ if [[ -n "${SLURM_JOB_ID:-}" ]]; then
   TEMPLATE_LOG_ERR="/nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans/models/qwen3vl/logs/qwen3vl-${CLIENT_TEMPLATE_NAME}-${SLURM_JOB_ID}.err"
   exec > >(tee -a "${TEMPLATE_LOG_OUT}") 2> >(tee -a "${TEMPLATE_LOG_ERR}" >&2)
 fi
+
+if [[ "${ALLOW_CONCURRENT_QWEN3VL_JOBS:-0}" != "1" && -n "${SLURM_JOB_ID:-}" ]]; then
+  active_qwen3vl_job="$(
+    squeue --noheader --user="${USER}" --states=RUNNING --format='%A|%j' |
+      awk -F'|' -v current_job_id="${SLURM_JOB_ID}" \
+        '$1 != current_job_id && $1 + 0 < current_job_id + 0 && $2 ~ /^qwen3vl-/ { print; exit }'
+  )"
+  if [[ -n "${active_qwen3vl_job}" ]]; then
+    echo "Another Qwen3-VL job is already running (${active_qwen3vl_job}); refusing a concurrent socket-NCCL launch. Set ALLOW_CONCURRENT_QWEN3VL_JOBS=1 to override." >&2
+    exit 2
+  fi
+fi
+
+VLLM_STDOUT="/nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans/models/qwen3vl/logs/vllm-${CLIENT_TEMPLATE_NAME}-${SLURM_JOB_ID:-manual}.out"
+VLLM_STDERR="/nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans/models/qwen3vl/logs/vllm-${CLIENT_TEMPLATE_NAME}-${SLURM_JOB_ID:-manual}.err"
 
 # container-side extra libraries, because the container's cu129 PyTorch does not ship the CUDA-13 libs (libnvrtc.so.13 / libcudart.so.13) that torchcodec loads at `vllm serve` startup.
 # install them once for the container's python into this dir (bind-mounted below), which keeps the model env (models-arm64) completely separate from the container:
@@ -53,6 +96,15 @@ APPT="apptainer exec --nv \
 # Environment applied inside each container command (CUDA-13 libs; NCCL diagnostics).
 # NCCL_DEBUG=INFO produces a lot of output, but it is useful for debugging multi-node vLLM hangs
 export INCONTAINER_ENV="export LD_LIBRARY_PATH=${NVRTC_DIR}:\${LD_LIBRARY_PATH}; export NCCL_DEBUG=INFO"
+
+case "${VLLM_ENABLE_EXPERT_PARALLEL}" in
+  1) VLLM_EXPERT_PARALLEL_ARG="--enable-expert-parallel" ;;
+  0) VLLM_EXPERT_PARALLEL_ARG="" ;;
+  *)
+    echo "VLLM_ENABLE_EXPERT_PARALLEL must be 0 or 1, got: ${VLLM_ENABLE_EXPERT_PARALLEL}" >&2
+    exit 2
+    ;;
+esac
 
 # Load HuggingFace token from environment or an optional config file
 if [[ -z "${HUGGING_FACE_HUB_TOKEN:-}" ]]; then
@@ -98,11 +150,11 @@ vllm_common="\
   --nnodes ${SLURM_NNODES} \
   --master-addr ${HEAD_IP} \
   --master-port ${MASTER_PORT} \
-  --enable-expert-parallel \
+  ${VLLM_EXPERT_PARALLEL_ARG} \
   --enforce-eager \
   --max-model-len 48000 \
-  --max-num-seqs 16 \
-  --max-num-batched-tokens 8192 \
+  --max-num-seqs ${VLLM_MAX_NUM_SEQS} \
+  --max-num-batched-tokens ${VLLM_MAX_NUM_BATCHED_TOKENS} \
   --distributed-timeout-seconds 1800 \
   --limit-mm-per-prompt.image 20 \
   --limit-mm-per-prompt.video 0 \
@@ -111,14 +163,16 @@ vllm_common="\
 
 
 echo "Launching vLLM (mp) across ${SLURM_NNODES} nodes; head=${HEAD_HOSTNAME} (${HEAD_IP})"
-: > vllm.out
-: > vllm.err
+: > "${VLLM_STDOUT}"
+: > "${VLLM_STDERR}"
+echo "vLLM stdout: ${VLLM_STDOUT}"
+echo "vLLM stderr: ${VLLM_STDERR}"
 srun --nodes=${SLURM_NNODES} --ntasks=${SLURM_NNODES} --ntasks-per-node=1 \
   ${APPT} ${SIF_IMAGE} bash -lc "${INCONTAINER_ENV}; \
     if [ \"\${SLURM_NODEID}\" = \"0\" ]; then EXTRA=''; else EXTRA='--headless'; fi; \
     echo \"node rank \${SLURM_NODEID} on \$(hostname) headless=[\${EXTRA}]\"; \
     vllm serve ${HF_MODEL} --port ${API_PORT} --node-rank \${SLURM_NODEID} \${EXTRA} ${vllm_common}" \
-  > vllm.out 2> vllm.err &
+  > "${VLLM_STDOUT}" 2> "${VLLM_STDERR}" &
 SRUN_PID=$!
 
 
@@ -129,7 +183,7 @@ server_ready() {
     curl -sf -o /dev/null --max-time 5 "${HEALTH_URL}" && return 0
     return 1
   fi
-  grep -qE 'Application startup complete|Uvicorn running on' vllm.err vllm.out 2>/dev/null
+  grep -qE 'Application startup complete|Uvicorn running on' "${VLLM_STDERR}" "${VLLM_STDOUT}" 2>/dev/null
 }
 for i in {1..180}; do
   if server_ready; then
@@ -156,6 +210,10 @@ echo "Starting client -> ${SERVER_URL}"
 echo "Client template: ${CLIENT_TEMPLATE_NAME}"
 echo "Client output dir: ${CLIENT_OUTPUT_DIR}"
 echo "Client concurrency: ${CLIENT_CONCURRENCY}"
+echo "Client max tokens: ${CLIENT_MAX_TOKENS}"
+echo "Client thinking token budget: ${CLIENT_THINKING_TOKEN_BUDGET}"
+echo "vLLM max sequences: ${VLLM_MAX_NUM_SEQS}"
+echo "vLLM expert parallel: ${VLLM_ENABLE_EXPERT_PARALLEL}"
 ls -la "${RUNPY_PATH}"
 unset SSL_CERT_FILE
 source ${HOST_VENV}/bin/activate
@@ -163,8 +221,45 @@ python3 "${RUNPY_PATH}" \
   --output_dir ${CLIENT_OUTPUT_DIR} \
   --template_name ${CLIENT_TEMPLATE_NAME} \
   --concurrency ${CLIENT_CONCURRENCY} \
-  --server_url ${SERVER_URL}
+  --max_tokens ${CLIENT_MAX_TOKENS} \
+  --thinking_token_budget ${CLIENT_THINKING_TOKEN_BUDGET} \
+  --server_url ${SERVER_URL} &
+CLIENT_PID=$!
+
+# Watchdog: if the vLLM server process dies or stops answering /health while the
+# client is still running, kill the client immediately. Without this, a mid-run
+# EngineDeadError crash (see logs/vllm-*.err) leaves the client looping through
+# every remaining (seed, story) combination as an instant, guaranteed
+# "Connection error" for the rest of the job — observed as two full wasted
+# 60-story passes after the server died.
+(
+  consecutive_failures=0
+  while kill -0 "${CLIENT_PID}" 2>/dev/null; do
+    sleep 30
+    if ! kill -0 "${SRUN_PID}" 2>/dev/null; then
+      echo "WATCHDOG: vLLM srun process has exited; stopping the client." >&2
+      kill -TERM "${CLIENT_PID}" 2>/dev/null
+      break
+    fi
+    if curl -sf -o /dev/null --max-time 5 "${HEALTH_URL}"; then
+      consecutive_failures=0
+    else
+      consecutive_failures=$((consecutive_failures + 1))
+      echo "WATCHDOG: vLLM /health check failed (${consecutive_failures} consecutive)." >&2
+      if [[ ${consecutive_failures} -ge 4 ]]; then
+        echo "WATCHDOG: vLLM unresponsive for ~120s; stopping the client to avoid burning through remaining requests." >&2
+        kill -TERM "${CLIENT_PID}" 2>/dev/null
+        break
+      fi
+    fi
+  done
+) &
+WATCHDOG_PID=$!
+
+wait "${CLIENT_PID}"
 CLIENT_RC=$?
+kill "${WATCHDOG_PID}" 2>/dev/null
+wait "${WATCHDOG_PID}" 2>/dev/null
 deactivate || true
 echo "Client script completed with exit code: ${CLIENT_RC}"
 

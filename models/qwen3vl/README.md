@@ -1,7 +1,7 @@
 # Qwen3-VL-235B multi-node serving on Arrhenius - runbook
 
 This is the practical runbook for serving Qwen/Qwen3-VL-235B-A22B-Thinking
-with vLLM across 4 Arrhenius GPU nodes, then running run.py for story generation.
+with vLLM across 4 Arrhenius GPU nodes, then running run.py for story generation. This is (potentially) useful for other models as well, but this was not checked yet. Though, no errors were encountered with other models yet.
 
 If you only need to launch a run, go straight to Quick start.
 
@@ -48,22 +48,6 @@ that the client has not started yet or failed before calling run.py.
   8.5 hours.
 - **Client**: `run.py` runs on the **host** (not the container) in the `models-arm64` venv,
   talks to the server over HTTP (OpenAI-compatible API), fires stories concurrently.
-
-### Filesystem layout (Arrhenius)
-
-| Purpose | Path |
-|---|---|
-| Project root | `/nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans` |
-| This workdir | `.../models/qwen3vl` |
-| Container image (SIF) | `.../models/vllm-v0.25.0-aarch64.sif` |
-| Client venv (host) | `.../envs/models-arm64` |
-| Container extra libs | `.../envs/vllm-extras` |
-| HF model cache | `/nobackup/proj/disk/naiss2024-6-297/shared/hf-home` |
-| Prompts | `.../data/prompts/prompt-original-target-{w,wo}-names.txt` |
-| Story images | `.../data/sampled_60/images` |
-| Character images | `.../data/sampled_60/characters` |
-| Story metadata / word counts | `.../data/sampled_60/sampled_60_stories.json` |
-| Character-name CSV | `.../data/vwp-acl2025-subset.csv` |
 
 > Login node is amd64, container and venvs are arm64.
 > You cannot run the SIF or import compiled packages from those venvs on arrhenius1.
@@ -206,93 +190,10 @@ sbatch --export=ALL,CLIENT_TEMPLATE_NAME=large-target,CLIENT_OUTPUT_DIR=./models
 
 Nothing needs re-installing between runs.
 
----
-
-## 4. Monitor progress
-
-```bash
-squeue --me
-sacct -j <jobid> --format=JobID,JobName%22,State,Elapsed,ExitCode
-
-# launcher log (first place to look)
-tail -f models/qwen3vl/logs/qwen3vl-<template>-<jobid>.out
-
-# server bring-up and engine health
-cd models/qwen3vl
-tail -f vllm.err vllm.out
-
-# check decode throughput and active requests
-grep 'Avg generation throughput' vllm.out | tail
-
-# output files (bursty writes are normal with concurrency)
-find <output_dir>/prompt-<template>-outputs -name '*.parquet' | wc -l
-```
-
-Healthy signs:
-- launcher log shows Server started successfully then Starting client
-- vllm.out shows non-zero Avg generation throughput and Running: 16 reqs
-- parquet count increases in bursts
-
-Unhealthy signs:
-- launcher log repeats Waiting... for too long
-- no Starting client line
-- repeated No available shared memory broadcast block found in 60 seconds
-
-`vllm.out` / `vllm.err` are overwritten each run; `logs/%x-%j.*` are per-job history.
 
 ---
 
-## 5. Key files
-
-| File | Role |
-|---|---|
-| `qwen3vl-arrhenius.slurm` | Launcher: starts the multi-node server + runs the client |
-| `run.py` | Story-generation client (HTTP → OpenAI API). Host, in `models-arm64` |
-| `../vllm-0.25.def` | Apptainer definition to build the arm64 SIF |
-| `README.md` | This document |
-
-`run.py` behavior:
-- `--csv_file` is **optional**. If omitted, story IDs come from the target source
-  (`sampled_60_stories.json` for `original*` templates).
-- Any template passed via `--template_name` auto-selects `-w-names` / `-wo-names`
-  per story based on whether that story has character images (for example,
-  `original-target`, `large-target`, `large-upper-bound`).
-- `--concurrency N` sends N stories at once (thread pool; client is thread-safe, each
-  story writes its own parquet). Pair with server `--max-num-seqs N`.
-
-### Inspecting generated stories
-
-Each story is one `.parquet` row with columns: `story_id`, `num_story_images`,
-`num_character_images`, `target_words`, `instruction_text`, `model_output`, `seed`,
-`elapsed_time`.
-
-Important: this is a Thinking model. model_output often contains a reasoning trace
-before the final story. Many samples include a literal </think> separator, but some
-do not.
-
-Recommended: use scripts/collect_and_clean_data.py for post-processing. It handles:
-- standard extraction after </think>
-- fallback extraction when </think> is missing
-- normalization of [SEP] spacing
-
-Read parquet **on the login node** (amd64) — the arm64 client venv won't import there.
-Use the SciPy-bundle module and add `pyarrow` once to your user site:
-
-```bash
-module load Python/3.13.5-bundle-SciPy-2025.07-mpi4py-4.1.0-gcc-2025b-eb
-python3 -m pip install --user pyarrow      # one-time
-python3 - <<'PY'
-import pandas as pd
-df = pd.read_parquet("out-qwen3vl-60stories/prompt-original-target-outputs/345.parquet")
-out = str(df.iloc[0]["model_output"])
-story = out.split("</think>", 1)[-1].strip()   # final story only
-print(story)
-PY
-```
-
----
-
-## 6. Gotchas we hit (and the fixes)
+## 6. Some issues and fixes, helpful to have it here for the future
 
 1. **Login node is amd64, container/venvs are arm64** → false "not found" errors on
    `arrhenius1`. Test on a GPU node.
@@ -305,28 +206,16 @@ PY
 6. **Pipeline parallel (`pp>1`) crashes Qwen3-VL-MoE** at init with
    "No model architectures are specified" (vLLM bug #43271; fix PR #43272 not in v0.25.0).
    Use `tp=16, pp=1`. Cross-node NCCL for TP works fine here.
-7. **`run.py` had hardcoded `/mimer/...` (Alvis) paths** → repointed to `/nobackup`
-   equivalents (images, characters, prompts, VWP CSV).
-8. **`default_target_source_for_template` walked up one dir too many** (`../../..` →
-   `/shared`). Fixed to the absolute `coherence-driven-humans` root.
-9. **Decode deadlock → must use `--enforce-eager`** (vLLM issue #30682). With CUDA
+7. **Decode deadlock → must use `--enforce-eager`** (vLLM issue #30682). With CUDA
    graphs on, the server starts fine, generates ~1 token, then hangs at 0 tok/s while
    `EngineCore` spams `No available shared memory broadcast block found in 60 seconds`.
    Trigger: the vision Triton kernels (`_bilinear_pos_embed_kernel`,
    `_compute_slot_mapping_kernel`) JIT-compile mid-inference on only some ranks, which
    desyncs the cross-node NCCL collective under CUDA graphs. `--enforce-eager` gives
    every rank the same deterministic path → stable sustained decode. No container change.
-10. **Launcher readiness race (premature client start).** The old wait loop grepped
-    `vllm.out`/`vllm.err` for "Application startup complete", but those files still held
-    that line from the **previous** run, so the client launched against a server that
-    was only partially loaded → all 60 stories `Connection error`, job "COMPLETED" in
-    ~2 min. Fix: **truncate the logs before `srun`** *and* poll the real HTTP `/health`
-    endpoint instead of trusting a log string. Symptom to recognize: the batch `.out`
-    jumps straight to "Server started successfully" with no "Waiting... (n/180)" lines.
-
 ---
 
-## 7. References (issues, PRs, docs we relied on)
+## 7. Some encountered issues, PRs, docs we relied on
 
 vLLM issues / PRs:
 - **Ray removed from the container image** (why MP multi-node instead of Ray):

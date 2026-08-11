@@ -67,7 +67,16 @@ def strip_story_markers(text):
     """Remove structural markers that should not count as words."""
     return re.sub(r"\[(?:SEP|SENT)\]", " ", str(text))
 
-def send_prompt_with_images_openai(story_images, character_images, instruction_text, seed, template_name):
+def send_prompt_with_images_openai(
+    story_images,
+    character_images,
+    instruction_text,
+    seed,
+    template_name,
+    max_tokens,
+    enable_thinking,
+    thinking_token_budget,
+):
     """Send prompt with local images (converted to base64) to the model."""
     content = []
 
@@ -111,6 +120,12 @@ def send_prompt_with_images_openai(story_images, character_images, instruction_t
             "You are qualified to perform the following task."
         )
     
+    extra_body = {
+        "chat_template_kwargs": {"enable_thinking": bool(enable_thinking)},
+    }
+    if thinking_token_budget is not None:
+        extra_body["thinking_token_budget"] = int(thinking_token_budget)
+
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[
@@ -130,8 +145,9 @@ def send_prompt_with_images_openai(story_images, character_images, instruction_t
         ],
         temperature=0.6,
         top_p=0.95,
-        max_tokens=4096,
-        seed=seed
+        max_tokens=max_tokens,
+        seed=seed,
+        extra_body=extra_body,
     )
     
     return response.choices[0].message.content
@@ -289,10 +305,8 @@ def compute_target_words_by_story_id(target_source_file, target_source_format, t
 def default_target_source_for_template(template_name):
     """Pick the correct human source file for a prompt template."""
     repo_root = "/nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans"
-    if template_name == "large-upper-bound":
-        return os.path.join(repo_root, "data", "post-processing", "cleaned_outputs.json"), "cleaned_outputs"
     if "large" in template_name:
-        return os.path.join(repo_root, "notebooks", "collected_60.csv"), "csv"
+        return os.path.join(repo_root, "collected_60.csv"), "csv"
     return os.path.join(repo_root, "data", "sampled_60", "sampled_60_stories.json"), "jsonl"
 
 def load_character_names_dataframe():
@@ -318,7 +332,18 @@ def get_character_names_for_story_id(vwp_df, story_id):
     
     return character_names if character_names else None
 
-def process_story(story_id, output_dir, prompt_dir, prompt_name, seed, vwp_df, target_words_map):
+def process_story(
+    story_id,
+    output_dir,
+    prompt_dir,
+    prompt_name,
+    seed,
+    vwp_df,
+    target_words_map,
+    max_tokens,
+    enable_thinking,
+    thinking_token_budget,
+):
     """Process a single story by querying the model with its images."""
     try:
         # Determine output path first
@@ -369,7 +394,10 @@ def process_story(story_id, output_dir, prompt_dir, prompt_name, seed, vwp_df, t
             character_images=character_images if character_images else None,
             instruction_text=instruction_text,
             seed=seed,
-            template_name=prompt_name
+            template_name=prompt_name,
+            max_tokens=max_tokens,
+            enable_thinking=enable_thinking,
+            thinking_token_budget=thinking_token_budget,
         )
         elapsed_time = time.time() - start_time
         
@@ -396,7 +424,19 @@ def process_story(story_id, output_dir, prompt_dir, prompt_name, seed, vwp_df, t
         print(f"Error processing story_id {story_id}: {e}")
         return False
 
-def run(story_ids, output_dir, prompt_dir, prompt_name, seed, vwp_df, target_words_map, concurrency=1):
+def run(
+    story_ids,
+    output_dir,
+    prompt_dir,
+    prompt_name,
+    seed,
+    vwp_df,
+    target_words_map,
+    max_tokens,
+    enable_thinking,
+    thinking_token_budget,
+    concurrency=1,
+):
     """Process all stories and save outputs.
 
     When concurrency > 1, stories are dispatched to the server concurrently via a
@@ -411,7 +451,18 @@ def run(story_ids, output_dir, prompt_dir, prompt_name, seed, vwp_df, target_wor
 
     if concurrency <= 1:
         for story_id in tqdm(story_ids, total=len(story_ids)):
-            if process_story(story_id, output_dir, prompt_dir, prompt_name, seed, vwp_df, target_words_map):
+            if process_story(
+                story_id,
+                output_dir,
+                prompt_dir,
+                prompt_name,
+                seed,
+                vwp_df,
+                target_words_map,
+                max_tokens,
+                enable_thinking,
+                thinking_token_budget,
+            ):
                 successful += 1
             else:
                 failed += 1
@@ -421,6 +472,7 @@ def run(story_ids, output_dir, prompt_dir, prompt_name, seed, vwp_df, target_wor
                 executor.submit(
                     process_story, story_id, output_dir, prompt_dir, prompt_name,
                     seed, vwp_df, target_words_map,
+                    max_tokens, enable_thinking, thinking_token_budget,
                 )
                 for story_id in story_ids
             ]
@@ -431,6 +483,7 @@ def run(story_ids, output_dir, prompt_dir, prompt_name, seed, vwp_df, target_wor
                     failed += 1
 
     print(f"\nProcessing complete: {successful} successful, {failed} failed")
+    return successful, failed
 
 
 def main(args):
@@ -483,12 +536,30 @@ def main(args):
 
     if template_name in ['original', 'medium', 'original-target']:
         print(f"Running with template: {template_name}, seed 42")
-        run(story_ids, output_dir, template_dir, template_name, seed=42, vwp_df=vwp_df, target_words_map=target_words_map, concurrency=args.concurrency)
+        _, failed = run(
+            story_ids, output_dir, template_dir, template_name, seed=42,
+            vwp_df=vwp_df, target_words_map=target_words_map,
+            max_tokens=args.max_tokens,
+            enable_thinking=not args.disable_thinking,
+            thinking_token_budget=args.thinking_token_budget,
+            concurrency=args.concurrency,
+        )
+        return 1 if failed else 0
     elif template_name in ['large', 'large-target', 'large-upper-bound']:
         print(f"Running with template: {template_name}, all 60 stories with seeds 42, 43, 44")
+        total_failed = 0
         for seed in [42, 43, 44]:
             print(f"\n=== Processing with seed {seed} ===")
-            run(story_ids, output_dir, template_dir, template_name, seed=seed, vwp_df=vwp_df, target_words_map=target_words_map, concurrency=args.concurrency)
+            _, failed = run(
+                story_ids, output_dir, template_dir, template_name, seed=seed,
+                vwp_df=vwp_df, target_words_map=target_words_map,
+                max_tokens=args.max_tokens,
+                enable_thinking=not args.disable_thinking,
+                thinking_token_budget=args.thinking_token_budget,
+                concurrency=args.concurrency,
+            )
+            total_failed += failed
+        return 1 if total_failed else 0
     else:
         raise ValueError(f"Unknown template name: {template_name}")
 
@@ -525,8 +596,28 @@ if __name__ == "__main__":
     )
     parser.add_argument("--server_url", type=str, required=True, help="Server URL in format 'hostname:port' (e.g., '10.21.30.119:47246')")
     parser.add_argument("--concurrency", type=int, default=1, help="Number of stories to send concurrently. Should be <= the server's --max-num-seqs for best effect.")
+    parser.add_argument(
+        "--max_tokens",
+        type=int,
+        default=8192,
+        help="Maximum generated tokens per story request.",
+    )
+    parser.add_argument(
+        "--thinking_token_budget",
+        type=int,
+        default=-1,
+        help=(
+            "vLLM reasoning budget for thinking models. "
+            "Use -1 for unlimited (vLLM default semantics for reasoning budget)."
+        ),
+    )
+    parser.add_argument(
+        "--disable_thinking",
+        action="store_true",
+        help="Disable model thinking mode via chat_template_kwargs.enable_thinking=False.",
+    )
 
     args = parser.parse_args()
-    main(args)
+    raise SystemExit(main(args))
 
 

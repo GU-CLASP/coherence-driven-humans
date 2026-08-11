@@ -1,34 +1,20 @@
-# InternVL3 Model
+# InternVL3 Model (Arrhenius)
 
-## Start vLLM Server
+Supported template names:
 
-```bash
-sbatch internvl3-start.slurm
-```
+- `original`
+- `large`
+- `original-target`
+- `large-target`
+- `large-upper-bound`
 
-## Run the Script on the Same Node
+## Submit a run
 
-Find the node where the job is running:
-
-```bash
-scontrol show job JOBID | grep -E 'BatchHost|NodeList'
-```
-
-Connect to that node:
+From repo root:
 
 ```bash
-srun --jobid=JOBID -N1 -n1 -w NODEID --cpus-per-task=1 --overlap --pty bash -l
-```
+cd /nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans
 
-## Run the Model
-
-```bash
-module purge
-module load virtualenv/20.32.0-GCCcore-14.3.0
-source ./qwen3vl/bin/activate
-python run.py \
-  --csv_file ../../notebooks/collected_60.csv \
-  --output_dir ./out-internvl3-60stories \
-  --template_name original|large \
-  --server_url HOST:PORT
+sbatch --export=ALL,CLIENT_TEMPLATE_NAME=large,CLIENT_OUTPUT_DIR=./models/internvl3/out-internvl3-60stories,CLIENT_CONCURRENCY=16 \
+  models/internvl3/internvl3-start.slurm
 ```

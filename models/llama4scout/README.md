@@ -1,34 +1,20 @@
-# Llama-4-Scout Model
+# Llama-4-Scout Model (Arrhenius)
 
-## Start vLLM Server
+Supported template names:
 
-```bash
-sbatch llama4scout-start.slurm
-```
+- `original`
+- `large`
+- `original-target`
+- `large-target`
+- `large-upper-bound`
 
-## Run the Script on the Same Node
+## Submit a run
 
-Find the node where the job is running:
-
-```bash
-scontrol show job JOBID | grep -E 'BatchHost|NodeList'
-```
-
-Connect to that node:
+From repo root:
 
 ```bash
-srun --jobid=JOBID -N1 -n1 -w NODEID --cpus-per-task=1 --overlap --pty bash -l
-```
+cd /nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans
 
-## Run the Model
-
-```bash
-module purge
-module load virtualenv/20.32.0-GCCcore-14.3.0
-source /mimer/NOBACKUP/groups/naiss2024-6-297/vllm-environments/qwen3vl/bin/activate
-python run.py \
-  --csv_file ../../notebooks/collected_60.csv \
-  --output_dir ./out-llama4scout-60stories \
-  --template_name original|large \
-  --server_url HOST:PORT
+sbatch --export=ALL,CLIENT_TEMPLATE_NAME=original,CLIENT_OUTPUT_DIR=./models/llama4scout/out-llama4scout-60stories,CLIENT_CONCURRENCY=16 \
+  models/llama4scout/llama4scout-start.slurm
 ```

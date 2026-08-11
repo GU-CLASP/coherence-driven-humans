@@ -8,7 +8,7 @@ See [portability-and-arrhenius.md](portability-and-arrhenius.md).
 
 ## Pipeline overview
 
-The pipeline has six stages: (1) data preparation, (2) story generation, (3) post-processing, (4) coreference resolution, (5) metric computation, and (6) analysis. The sections below describe the first two stages and the human collection setup that supports them. Later stages will be documented separately.
+The pipeline has six stages: (1) data preparation, (2) story generation, (3) post-processing, (4) coreference resolution, (5) metric computation, and (6) analysis. The sections below describe the first two stages, the combined collect-and-clean post-processing script, and the human collection setup that supports them. Later stages will be documented separately.
 
 ---
 
@@ -35,9 +35,7 @@ Multiple prompt conditions are used. They differ in whether a target word count 
 - **Length-matched short prompt** (`data/prompts/prompt-original-target-w-names.txt`): extends the short prompt by specifying a sequence-specific target length (N) instead of the min/max number of words to be generated. For each visual sequence, (N) is the word count of the corresponding human-authored VWP story. Models are instructed to generate approximately (N) words.
 - **Length-matched long prompt** (`data/prompts/prompt-large-target-w-names.txt`): extends the long prompt by specifying a sequence-specific target length (N) instead of the min/max number of words to be generated. Because three human-authored stories were collected for each visual sequence, (N) is defined as the median word count of those three stories. Models are instructed to generate approximately (N) words.
 
-**Upper bound specified**
-
-- **Upper-bound long prompt** (`data/prompts/prompt-large-upper-bound-w-names.txt`): extends the long prompt by imposing a sequence-specific maximum length (N). As in the length-matched long condition, (N) is defined as the median word count of the three human-authored stories for the corresponding visual sequence. Models are instructed not to exceed (N) words. Unlike the length-matched condition, it does not require the generated story to be close to (N) words.
+- ~~**Upper-bound long prompt** (`data/prompts/prompt-large-upper-bound-w-names.txt`): extends the long prompt by imposing a sequence-specific maximum length (N). As in the length-matched long condition, (N) is defined as the median word count of the three human-authored stories for the corresponding visual sequence. Models are instructed not to exceed (N) words. Unlike the length-matched condition, it does not require the generated story to be close to (N) words.~~
 
 ---
 
@@ -58,5 +56,31 @@ All models used `temperature=0.6` and `max_tokens=4096`.
 #### Human data collection (long prompt)
 
 Long-prompt human stories were collected via AMT (3 descriptions per sequence, 180 total). See `mturk/README.md` for the full recruitment criteria, workflow, and payment details.
+
+---
+
+### 3. Post-processing
+
+Post-processing is handled by a single script, `scripts/collect_and_clean_data.py`, which first collects model and human outputs into one dataset and then applies the same model-specific cleaning logic that used to live in `clean_data.py`.
+
+For Qwen3-VL, a typical run looks like this:
+
+```bash
+cd scripts
+python collect_and_clean_data.py \
+	--model-output qwen3vl=../models/qwen3vl/out-qwen3vl-60stories \
+	--include-prompts original,original-target,large,large-target,large-upper-bound \
+	--human-original-csv ../data/vwp-acl2025-subset.csv \
+	--human-large-csv ../collected_60.csv \
+	--human-original-prompt-types original,original-target \
+	--human-large-prompt-types large,large-target,large-upper-bound \
+	--short-seeds 42 \
+	--large-seeds 42,43,44 \
+	--seed-override claude45:original=44 \
+	--raw-output-json ../data/post-processing/collected_outputs.json \
+	--output-json ../data/post-processing/cleaned_outputs.json
+```
+
+If you only want the collected, uncleaned dataset, add `--skip-clean`. Before cleaning, the script prints a model/prompt/seed availability report with missing seeds, so it is easy to see which conditions are not yet collected. The script auto-discovers prompt folders named `prompt-*-outputs` under each model output root, so it can be extended to additional models later without changing the workflow.
 
 Further documentation for stages 3 onward will be added later.

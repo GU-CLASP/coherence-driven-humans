@@ -130,7 +130,7 @@ def load_pooled_data(prompt_type: str, ai_seed: int):
     Return parallel lists: texts, labels (0=human, 1=AI), groups (story_id),
     and meta dicts.  AI texts are filtered to *ai_seed* only.
     """
-    data_path = "/mimer/NOBACKUP/groups/naiss2025-22-1187/coherence-driven-humans/data/post-processing/cleaned_outputs.json"
+    data_path = str(Path(__file__).resolve().parents[2] / "data/post-processing/cleaned_outputs.json")
 
     with open(data_path, "r") as f:
         raw = json.load(f)
@@ -302,7 +302,7 @@ def _build_training_args(output_dir: str, epochs: int) -> TrainingArguments:
         metric_for_best_model="eval_f1",
         greater_is_better=True,
         save_strategy="steps",
-        report_to=None,
+        report_to="none",
         seed=42,
         dataloader_pin_memory=False,
         remove_unused_columns=False,

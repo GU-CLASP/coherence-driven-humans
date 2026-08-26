@@ -4,3 +4,6 @@
 [submodule "corefconversion"]
 	path = corefconversion
 	url = git@github.com:nilinykh/corefconversion.git
+[submodule "disrpt25-task"]
+	path = disrpt25-task
+	url = https://github.com/gucorpling/disrpt25-task.git

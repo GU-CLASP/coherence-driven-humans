@@ -1,30 +1,34 @@
 #!/bin/env bash
 
-#SBATCH -A NAISS2025-5-551
-#SBATCH -p alvis
-#SBATCH -t 24:00:00
-#SBATCH --gpus-per-node=A40:1
-#SBATCH -J 'finetune_roberta_pooled'
-#SBATCH -o '/mimer/NOBACKUP/groups/naiss2025-22-1187/coherence-driven-humans/scripts/ai-detect/logs/finetune_roberta_pooled.out'
+#SBATCH -A naiss2025-5-551-gpu
+#SBATCH -p gpu
+#SBATCH -N 1
+#SBATCH -c 72
+#SBATCH --gpus 1
+#SBATCH -t 2:00:00
+#SBATCH -J finetune_roberta_pooled
+#SBATCH -o /nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans/scripts/ai-detect/logs/finetune_roberta_pooled_%j.out
 
 module purge
-module load virtualenv/20.29.2-GCCcore-14.2.0
-module load Python/3.13.1-GCCcore-14.2.0
-module load CUDA/13.0.2
+module load GPU/Python/3.13.5-bare-gcc-2025b-eb
+module load GPU/buildenv-gcccuda/2026.03-cu13.0
 
-source /mimer/NOBACKUP/groups/naiss2025-22-1187/orig-tacl/ai-detector/aigenfinetune/bin/activate
+CDH=/nobackup/proj/disk/naiss2024-6-297/shared/coherence-driven-humans
+export HF_HOME=/nobackup/proj/disk/naiss2024-6-297/shared/hf-home
 
-echo "Python version:"
-python --version
-echo "PyTorch version:"
-python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')"
+# Slurm hands out all 4 GPUs even with --gpus 1. Without this, HF Trainer sees
+# device_count>1, wraps the model in DataParallel, and dies in NCCL init
+# (NET/OFI plugin unavailable). This job is single-GPU by design.
+export CUDA_VISIBLE_DEVICES=0
 
-# Change to the script directory
-cd /mimer/NOBACKUP/groups/naiss2025-22-1187/coherence-driven-humans/scripts/ai-detect
+source $CDH/envs/aidetect/bin/activate
 
-# Run the training script
-echo "Starting fine-tuning..."
-echo "Arguments: $@"
+echo "=== GPU VISIBILITY ==="
+echo "CUDA_VISIBLE_DEVICES=[$CUDA_VISIBLE_DEVICES]"
+python -c "import torch; print('torch:', torch.__version__, '| device_count:', torch.cuda.device_count(), '| cuda:', torch.cuda.is_available())"
+echo "======================"
+
+cd $CDH/scripts/ai-detect
 
 echo "Running pooled classifier with GroupKFold..."
 python finetune_roberta_pooled.py --prompt-type large --cv-folds 5 --epochs 20 "$@" 2>&1

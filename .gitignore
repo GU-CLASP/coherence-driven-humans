@@ -231,3 +231,6 @@ models/qwen3vl/out-qwen3vl-60stories/prompt-original-target-outputs/
 models/qwen3vl/vllm.err
 models/qwen3vl/vllm.out
 models/vllm-v0.25.0-aarch64.sif
+
+# Cluster-local virtualenvs (aarch64 binaries, not portable)
+envs/

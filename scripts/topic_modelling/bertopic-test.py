@@ -10,8 +10,8 @@ from bertopic import BERTopic
 from sentence_transformers import SentenceTransformer
 
 # Paths
-DATA_DIR = '/mimer/NOBACKUP/groups/naiss2024-6-297/cache/bertopic_data'
-DEFAULT_CACHE_DIR = '/mimer/NOBACKUP/groups/naiss2024-6-297/cache/bertopic_bootstrapped'
+DATA_DIR = os.environ.get('BERTOPIC_DATA_DIR', '/nobackup/proj/disk/naiss2024-6-297/from-alvis/cache/bertopic_data')
+DEFAULT_CACHE_DIR = os.environ.get('BERTOPIC_CACHE_DIR', '/nobackup/proj/disk/naiss2024-6-297/shared/bertopic_bootstrapped')
 
 def load_full_dataset() -> Tuple[List[str], pd.DataFrame]:
     """Load the full dataset (all texts including all human-large seeds)."""
@@ -193,7 +193,7 @@ def main():
         
         # just getting the most common topic, to look at
         from collections import Counter
-        topic_counts = Counter(doc_topics)
+        topic_counts = Counter(int(t) for t in doc_topics)
         main_topic = topic_counts.most_common(1)[0][0]
         
         # Average probabilities
